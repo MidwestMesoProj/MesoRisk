@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Advanced Severe Weather Engine</title>
+
+<style>
+
+*{
+box-sizing:border-box;
+}
+
+body{
+
+margin:0;
+
+font-family:
+Segoe UI,Arial,sans-serif;
+
+background:
+radial-gradient(circle at top,#263859,#05070c);
+
+color:white;
+
+}
+
+
+.container{
+
+width:95%;
+
+max-width:1400px;
+
+margin:auto;
+
+}
+
+
+
+h1{
+
+text-align:center;
+
+font-size:
+clamp(28px,5vw,50px);
+
+background:
+linear-gradient(
+90deg,
+cyan,
+magenta,
+yellow
+);
+
+-webkit-background-clip:text;
+
+color:transparent;
+
+}
+
+
+
+.panel{
+
+background:
+
+linear-gradient(
+145deg,
+rgba(255,255,255,.18),
+rgba(0,0,0,.75)
+);
+
+border-radius:25px;
+
+padding:25px;
+
+margin:20px 0;
+
+box-shadow:
+
+0 15px 40px black,
+
+inset 0 0 25px rgba(255,255,255,.15);
+
+border:
+1px solid rgba(255,255,255,.3);
+
+}
+
+
+
+.grid{
+
+display:grid;
+
+grid-template-columns:
+repeat(auto-fit,minmax(230px,1fr));
+
+gap:15px;
+
+}
+
+
+
+input{
+
+width:100%;
+
+padding:12px;
+
+border-radius:12px;
+
+background:#080c16;
+
+border:
+1px solid cyan;
+
+color:white;
+
+font-size:18px;
+
+}
+
+
+
+button{
+
+width:100%;
+
+padding:18px;
+
+font-size:22px;
+
+border-radius:20px;
+
+border:none;
+
+background:
+
+linear-gradient(
+45deg,
+#00ffff,
+#8a2be2
+);
+
+color:white;
+
+}
+
+
+
+.card{
+
+padding:18px;
+
+margin:15px 0;
+
+border-radius:20px;
+
+background:
+
+rgba(0,0,0,.45);
+
+}
+
+
+
+.bar{
+
+height:25px;
+
+background:#111;
+
+border-radius:20px;
+
+overflow:hidden;
+
+}
+
+
+
+.fill{
+
+height:100%;
+
+transition:.5s;
+
+}
+
+
+
+.NONE{background:#777}
+
+.MRGL{background:#00aa00}
+
+.SLGT{background:#ffff00;color:black}
+
+.ENH{background:#ff9900}
+
+.MDT{background:red}
+
+.HIGH{background:#ff00ff}
+
+
+
+@media(max-width:600px){
+
+.panel{
+
+padding:15px;
+
+}
+
+input{
+
+font-size:16px;
+
+}
+
+}
+
+
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<div class="container">
+
+
+<h1>
+⚡ MesoMax RiskSim
+</h1>
+
+
+
+<div class="panel">
+
+
+<h2>
+Forecast Conditions:
+</h2>
+
+
+<div class="grid">
+
+
+<div>
+ML CAPE J/kg
+<input id="cape" value="850">
+</div>
+
+
+<div>
+0-3km CAPE J/kg
+<input id="cape3" value="100">
+</div>
+
+
+<div>
+ML CIN J/kg
+<input id="cin" value="-8">
+</div>
+
+
+<div>
+DCAPE J/kg
+<input id="dcape" value="450">
+</div>
+
+
+<div>
+Surface Temp °F
+<input id="temp" value="77">
+</div>
+
+
+<div>
+Dewpoint °F
+<input id="dew" value="64">
+</div>
+
+
+<div>
+500mb Temp °F
+<input id="t500" value="10">
+</div>
+
+
+<div>
+0-6km Shear kt
+<input id="shear" value="60">
+</div>
+
+
+<div>
+0-1km SRH
+<input id="srh" value="350">
+</div>
+
+
+<div>
+STP
+<input id="stp" value="2">
+</div>
+
+
+</div>
+
+
+<button onclick="calculate()">
+
+RUN MODEL
+
+</button>
+
+
+</div>
+
+
+
+
+<div class="panel" id="output">
+
+Waiting...
+
+</div>
+
+
+
+</div>
+
+
+
+
+
+<script>
+
+
+function clamp(x,a,b){
+
+return Math.max(a,Math.min(b,x));
+
+}
+
+
+function norm(x,a,b){
+
+return clamp(
+(x-a)/(b-a),
+0,
+1
+);
+
+}
+
+
+
+function sigmoid(x){
+
+return 100/(1+Math.exp(-x));
+
+}
+
+
+
+function risk(p){
+
+if(p<5)return "NONE";
+
+if(p<15)return "MRGL";
+
+if(p<30)return "SLGT";
+
+if(p<45)return "ENH";
+
+if(p<60)return "MDT";
+
+return "HIGH";
+
+}
+
+
+
+
+
+function calculate(){
+
+
+let CAPE=
++cape.value;
+
+let CAPE3=
++cape3.value;
+
+let CIN=
+Math.abs(+cin.value);
+
+let DCAPE=
++dcape.value;
+
+
+let TEMP=
++temp.value;
+
+let DEW=
++dew.value;
+
+let T500=
++document.getElementById("t500").value;
+
+
+let SHEAR=
++shear.value;
+
+let SRH=
++srh.value;
+
+let STP=
++stp.value;
+
+
+
+// physics layers
+
+
+let thermo=
+
+Math.pow(
+norm(CAPE,0,3000),
+.55)
+
+*
+
+Math.pow(
+norm(DEW,40,80),
+.4)
+
+*
+
+Math.pow(
+norm(TEMP-T500,50,110),
+.5);
+
+
+
+let lowLevel=
+
+Math.pow(
+norm(CAPE3,0,500),
+.7);
+
+
+
+let rotation=
+
+Math.pow(
+norm(SRH,50,600),
+.8)
+
+*
+
+Math.pow(
+norm(SHEAR,20,80),
+.7);
+
+
+
+let cinPenalty=
+
+1/(1+CIN/20);
+
+
+
+// hazards
+
+
+let severe=
+
+sigmoid(
+
+thermo*
+rotation*
+cinPenalty*
+5-2
+
+);
+
+
+
+let supercell=
+
+sigmoid(
+
+rotation*
+thermo*
+4-2
+
+);
+
+
+
+let tornado=
+
+sigmoid(
+
+rotation*
+lowLevel*
+cinPenalty*
+(STP+1)
+*5-3
+
+);
+
+
+
+let hail=
+
+sigmoid(
+
+thermo*
+norm(CAPE,1000,4000)*
+norm(TEMP-T500,60,120)
+*4-3
+
+);
+
+
+
+let wind=
+
+sigmoid(
+
+norm(DCAPE,200,1600)*
+norm(SHEAR,35,90)
+*5-2
+
+);
+
+
+
+let derecho=
+
+sigmoid(
+
+norm(DCAPE,500,1500)*
+norm(SHEAR,60,120)
+*4-3
+
+);
+
+
+
+let intensity=
+
+clamp(
+
+(
+severe+
+supercell+
+tornado+
+hail+
+wind
+)/5,
+
+0,
+
+100
+
+);
+
+
+
+// estimates
+
+
+let hailSize=
+
+(clamp(hail/25,0,5)).toFixed(1);
+
+
+let windSpeed=
+
+Math.round(
+15+
+wind*1.75
+);
+
+
+let ef=
+
+tornado<15?
+"EF0-EF1":
+tornado<30?
+"EF1-EF2":
+tornado<45?
+"EF2-EF3":
+tornado<70?
+"EF3-EF4":
+"EF4+";
+
+
+
+let stormType=
+
+supercell>60?
+"SUPERCELL":
+
+wind>60?
+"LINEAR / QLCS":
+
+"MULTICELL";
+
+
+
+
+
+show({
+
+"General Severe":severe,
+
+"Supercell":supercell,
+
+"Tornado":tornado,
+
+"Large Hail":hail,
+
+"Damaging Wind":wind,
+
+"Derecho":derecho,
+
+
+"Storm Intensity":intensity,
+
+
+"Hail Size":hailSize*1,
+
+"Wind Gust mph":windSpeed,
+
+"Tornado Potential":ef,
+
+"Storm Type":stormType
+
+
+});
+
+
+}
+
+
+
+
+
+function show(data){
+
+
+let html=
+"<h1>Results</h1>";
+
+
+
+for(let k in data){
+
+
+if(typeof data[k]=="number"){
+
+let p=data[k].toFixed(1);
+
+let c=risk(data[k]);
+
+
+html+=`
+
+<div class="card">
+
+<h2>${k}</h2>
+
+<h3>${p}% <span class="${c}">
+${c}
+</span></h3>
+
+
+<div class="bar">
+
+<div class="fill ${c}"
+style="width:${p}%">
+</div>
+
+</div>
+
+</div>
+
+`;
+
+}
+
+
+else{
+
+
+html+=`
+
+<div class="card">
+
+<h2>${k}</h2>
+
+<h3>${data[k]}</h3>
+
+</div>
+
+`;
+
+}
+
+
+}
+
+
+output.innerHTML=html;
+
+
+}
+
+
+
+</script>
+
+
+</body>
+
+</html>
