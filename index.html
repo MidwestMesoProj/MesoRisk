@@ -1267,7 +1267,7 @@ function calculate(){
     highestBaseline / 100;
 
   const expectedEventsPerYear =
-      (100 - env.annual / 1000) * Math.pow(82180, forecastProbability);
+      ((100 - env.annual) / 1000) * Math.pow(82180, forecastProbability);
 
   const returnPeriod =
     expectedEventsPerYear > 0
