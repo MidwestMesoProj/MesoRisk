@@ -1232,9 +1232,9 @@ function calculate(){
 
   const supercell = clamp(
     100 * (
-      .4*norm(env.cape,750,3000) +
-      .35*norm(env.shear,35,75) +
-      .25*norm(env.esrh,75,450)
+      .4*norm(env.cape,1200,3000) +
+      .35*norm(env.shear,30,75) +
+      .25*norm(env.esrh,100,500)
     ),
     0,
     100
@@ -1267,7 +1267,7 @@ function calculate(){
     highestBaseline / 100;
 
   const expectedEventsPerYear =
-      (env.annual / 1000) * Math.pow(82180, forecastProbability);
+      (100 - env.annual / 1000) * Math.pow(82180, forecastProbability);
 
   const returnPeriod =
     expectedEventsPerYear > 0
@@ -1384,7 +1384,7 @@ function render(data){
     ["Tornado",d.tornado],
     ["Large Hail",d.hail],
     ["Damaging Wind",d.wind],
-    ["Supercell Environment",d.supercell]
+    ["Severe (Day 3+)",d.supercell]
   ];
 
   $("results").innerHTML = hazards.map(([name,p]) => {
@@ -1822,7 +1822,7 @@ function resetModel(){
     t500:10,
     time:16,
     annual:25,
-    area:1963,
+    area:500,
     rho:.001
   };
 
