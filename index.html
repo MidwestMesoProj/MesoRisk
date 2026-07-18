@@ -1267,7 +1267,7 @@ function calculate(){
     highestBaseline / 100;
 
   const annualLikelihood =
-    Math.max(env.annual,0);
+    Math.max(100 - env.annual,0);
 
   const expectedEventsPerYear =
     annualLikelihood * forecastProbability;
@@ -1286,7 +1286,7 @@ function calculate(){
   else if(returnPeriod <= 10)
     rarity = "Semi Annual Event";
   else
-    rarity = "Commom";
+    rarity = "Rare";
 
   const estimatedLSR =
     env.area *
@@ -1452,7 +1452,7 @@ function render(data){
         <strong style="font-size:24px">${d.rarity}</strong>
       </div>
       <span class="level ${d.returnPeriod > 10 ? "HIGH" : "ENH"}">
-        ${d.expectedEventsPerYear.toFixed(3)} return period
+        ${d.expectedEventsPerYear.toFixed(3)} year return period
       </span>
     </div>
   `;
