@@ -1,0 +1,1872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MesoMax RiskSim — Advanced Severe Weather Engine</title>
+
+<style>
+:root{
+  --bg:#05070d;
+  --panel:rgba(12,18,31,.88);
+  --panel2:rgba(24,33,52,.72);
+  --text:#f5f7ff;
+  --muted:#9aa6bd;
+  --border:rgba(255,255,255,.13);
+  --cyan:#00eaff;
+  --purple:#a855f7;
+  --yellow:#ffe600;
+  --green:#00a63c;
+  --orange:#ff9518;
+  --red:#f04444;
+  --magenta:#f000d0;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  min-height:100vh;
+  font-family:Segoe UI,Arial,sans-serif;
+  color:var(--text);
+  background:
+    radial-gradient(circle at 10% 0%,rgba(0,234,255,.15),transparent 28%),
+    radial-gradient(circle at 90% 0%,rgba(168,85,247,.18),transparent 30%),
+    linear-gradient(135deg,#05070d,#0b1020 50%,#05070d);
+  overflow-x:hidden;
+}
+
+body:before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  opacity:.1;
+  background-image:
+    linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);
+  background-size:40px 40px;
+}
+
+.container{
+  width:min(1500px,94%);
+  margin:auto;
+  padding:16px 0 60px;
+}
+
+.hero{
+  text-align:center;
+  padding:22px 10px 12px;
+}
+
+h1{
+  margin:0;
+  font-size:clamp(32px,6vw,64px);
+  letter-spacing:-2px;
+  background:linear-gradient(90deg,#00eaff,#a855f7,#ff3cac,#ffe600);
+  -webkit-background-clip:text;
+  color:transparent;
+}
+
+.subtitle{
+  color:var(--muted);
+  margin-top:10px;
+  font-size:clamp(13px,2vw,17px);
+}
+
+.panel{
+  position:relative;
+  background:
+    linear-gradient(145deg,rgba(255,255,255,.08),rgba(0,0,0,.4)),
+    var(--panel);
+  border:1px solid var(--border);
+  border-radius:26px;
+  padding:26px;
+  margin:20px 0;
+  box-shadow:
+    0 20px 60px rgba(0,0,0,.42),
+    inset 0 1px rgba(255,255,255,.08);
+  backdrop-filter:blur(18px);
+}
+
+.panel:before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  border-radius:26px;
+  background:repeating-linear-gradient(
+    135deg,
+    transparent 0 13px,
+    rgba(255,255,255,.018) 14px 15px
+  );
+}
+
+.panel>*{position:relative}
+
+.section-title{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:15px;
+  margin-bottom:20px;
+}
+
+.section-title h2{
+  margin:0;
+  font-size:clamp(20px,3vw,28px);
+}
+
+.badge{
+  padding:6px 12px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:1px;
+  color:#001015;
+  background:var(--cyan);
+  white-space:nowrap;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:15px;
+}
+
+.input-group{
+  min-width:0;
+  padding:14px;
+  border-radius:16px;
+  background:rgba(0,0,0,.22);
+  border:1px solid rgba(255,255,255,.06);
+}
+
+.input-group label{
+  display:block;
+  color:var(--muted);
+  font-size:13px;
+  font-weight:800;
+  margin-bottom:8px;
+}
+
+.slider-row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 100px;
+  align-items:center;
+  gap:10px;
+}
+
+input[type=number]{
+  width:100%;
+  min-width:0;
+  padding:11px 12px;
+  border-radius:11px;
+  border:1px solid rgba(0,234,255,.35);
+  background:rgba(0,0,0,.42);
+  color:var(--text);
+  font-size:16px;
+  outline:none;
+}
+
+input[type=number]:focus{
+  border-color:var(--cyan);
+  box-shadow:0 0 0 3px rgba(0,234,255,.1);
+}
+
+input[type=range]{
+  width:100%;
+  accent-color:var(--cyan);
+  cursor:pointer;
+}
+
+.range-label{
+  display:flex;
+  justify-content:space-between;
+  color:#657188;
+  font-size:10px;
+  margin-top:5px;
+}
+
+.actions{
+  display:grid;
+  grid-template-columns:2fr 1fr;
+  gap:12px;
+  margin-top:22px;
+}
+
+button{
+  cursor:pointer;
+  border:0;
+  border-radius:16px;
+  padding:17px;
+  color:white;
+  font-size:18px;
+  font-weight:900;
+  transition:.2s;
+}
+
+button:hover{
+  transform:translateY(-2px);
+  filter:brightness(1.15);
+}
+
+.primary{
+  background:linear-gradient(110deg,#00cfe8,#7c3aed,#ec4899);
+  box-shadow:0 8px 25px rgba(0,234,255,.2);
+}
+
+.secondary{
+  background:rgba(255,255,255,.08);
+  border:1px solid var(--border);
+}
+
+.toggle-row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:18px;
+}
+
+.toggle{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:var(--muted);
+  font-size:13px;
+  padding:10px 13px;
+  border-radius:12px;
+  background:rgba(255,255,255,.05);
+}
+
+.toggle input{accent-color:var(--cyan)}
+
+.summary-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:12px;
+}
+
+.summary{
+  padding:18px;
+  border-radius:17px;
+  background:rgba(255,255,255,.055);
+  border:1px solid rgba(255,255,255,.08);
+}
+
+.summary small{
+  color:var(--muted);
+  display:block;
+  margin-bottom:8px;
+  font-weight:700;
+}
+
+.summary strong{
+  font-size:clamp(22px,3vw,30px);
+  line-height:1.15;
+}
+
+.results-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(270px,1fr));
+  gap:15px;
+}
+
+.risk-card{
+  position:relative;
+  overflow:hidden;
+  padding:19px;
+  min-height:160px;
+  border-radius:20px;
+  background:rgba(0,0,0,.34);
+  border:1px solid rgba(255,255,255,.08);
+}
+
+.risk-card:after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  opacity:.16;
+  background:repeating-linear-gradient(
+    135deg,
+    transparent 0 9px,
+    rgba(255,255,255,.2) 10px 11px
+  );
+  mask-image:linear-gradient(to bottom,transparent,black 50%);
+}
+
+.risk-card>*{position:relative}
+
+.risk-card h3{
+  margin:0;
+  font-size:15px;
+  color:var(--muted);
+}
+
+.value{
+  display:flex;
+  align-items:baseline;
+  gap:8px;
+  margin:12px 0;
+}
+
+.value strong{font-size:38px}
+.value span{color:var(--muted);font-size:13px}
+
+.bar{
+  height:9px;
+  border-radius:99px;
+  background:#080a10;
+  overflow:hidden;
+}
+
+.fill{
+  height:100%;
+  width:0%;
+  border-radius:99px;
+  transition:width .5s ease;
+}
+
+.NONE{background:#737b89}
+.MRGL{background:#00a63c}
+.SLGT{background:#f4e400}
+.ENH{background:#ff9518}
+.MDT{background:#f04444}
+.HIGH{background:#f000d0}
+
+.level{
+  display:inline-block;
+  padding:4px 8px;
+  border-radius:6px;
+  font-size:11px;
+  font-weight:900;
+  margin-top:10px;
+  color:#000;
+}
+
+.hatched{
+  background-image:repeating-linear-gradient(
+    135deg,
+    transparent 0 9px,
+    rgba(255,255,255,.15) 10px 11px
+  );
+}
+
+.experimental{
+  display:none;
+}
+
+.experimental.visible{
+  display:block;
+}
+
+.metric-list{
+  display:grid;
+  gap:9px;
+}
+
+.metric{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  padding:10px 0;
+  border-bottom:1px solid rgba(255,255,255,.07);
+}
+
+.metric:last-child{border-bottom:0}
+.metric span{color:var(--muted)}
+.metric strong{text-align:right}
+
+.chart-wrap{
+  position:relative;
+  height:390px;
+  width:100%;
+}
+
+canvas{
+  width:100%;
+  height:100%;
+}
+
+.chart-note{
+  color:var(--muted);
+  font-size:12px;
+  margin-top:10px;
+}
+
+.details{
+  border-top:1px solid rgba(255,255,255,.1);
+  padding-top:15px;
+}
+
+details summary{
+  cursor:pointer;
+  font-weight:900;
+  font-size:16px;
+  color:var(--cyan);
+  padding:6px 0;
+}
+
+.sources{
+  display:grid;
+  gap:12px;
+  margin-top:15px;
+}
+
+.source{
+  padding:13px;
+  border-radius:12px;
+  background:rgba(255,255,255,.045);
+  color:var(--muted);
+  font-size:13px;
+  line-height:1.5;
+}
+
+.source a{
+  color:var(--cyan);
+  font-weight:800;
+}
+
+.warning{
+  padding:13px 15px;
+  border-radius:13px;
+  background:rgba(255,174,0,.08);
+  border:1px solid rgba(255,174,0,.25);
+  color:#d9c79a;
+  font-size:12px;
+  line-height:1.5;
+  margin-top:15px;
+}
+
+.footer{
+  text-align:center;
+  color:#657188;
+  font-size:12px;
+  margin-top:30px;
+}
+
+@media(max-width:767px){
+  .container{
+    width:94%;
+    padding-top:8px;
+  }
+
+  .panel{
+    padding:17px;
+    border-radius:20px;
+  }
+
+  .grid{
+    grid-template-columns:1fr;
+  }
+
+  .slider-row{
+    grid-template-columns:minmax(0,1fr) 90px;
+  }
+
+  .actions{
+    grid-template-columns:1fr;
+  }
+
+  .chart-wrap{
+    height:290px;
+  }
+
+  .risk-card{
+    min-height:145px;
+  }
+
+  .section-title{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+
+  .badge{
+    align-self:flex-start;
+  }
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<header class="hero">
+  <h1>⚡ MesoMax RiskSim</h1>
+  <div class="subtitle">
+    Physics-first severe-weather environment engine · 25-mile spatial probability framework
+  </div>
+</header>
+
+<section class="panel">
+  <div class="section-title">
+    <h2>Atmospheric Environment</h2>
+    <span class="badge">IMPERIAL / METRIC MIX</span>
+  </div>
+
+  <div class="grid">
+
+    <div class="input-group">
+      <label>ML CAPE · J/kg</label>
+      <div class="slider-row">
+        <input id="capeRange" type="range" min="0" max="6000" step="25" value="850">
+        <input id="cape" type="number" min="0" max="6000" step="25" value="850">
+      </div>
+      <div class="range-label"><span>0</span><span>6000</span></div>
+    </div>
+
+    <div class="input-group">
+      <label>SB CAPE · J/kg</label>
+      <div class="slider-row">
+        <input id="sbCapeRange" type="range" min="0" max="6000" step="25" value="1000">
+        <input id="sbCape" type="number" min="0" max="6000" step="25" value="1000">
+      </div>
+      <div class="range-label"><span>0</span><span>6000</span></div>
+    </div>
+
+    <div class="input-group">
+      <label>SB LCL · m AGL</label>
+      <div class="slider-row">
+        <input id="sbLclRange" type="range" min="0" max="3000" step="25" value="700">
+        <input id="sbLcl" type="number" min="0" max="3000" step="25" value="700">
+      </div>
+      <div class="range-label"><span>0</span><span>3000</span></div>
+    </div>
+
+    <div class="input-group">
+      <label>0–3 km CAPE · J/kg</label>
+      <div class="slider-row">
+        <input id="cape3Range" type="range" min="0" max="1000" step="10" value="100">
+        <input id="cape3" type="number" min="0" max="1000" step="10" value="100">
+      </div>
+      <div class="range-label"><span>0</span><span>1000</span></div>
+    </div>
+
+    <div class="input-group">
+      <label>ML CIN · J/kg</label>
+      <div class="slider-row">
+        <input id="cinRange" type="range" min="-300" max="0" step="1" value="-8">
+        <input id="cin" type="number" min="-300" max="0" step="1" value="-8">
+      </div>
+      <div class="range-label"><span>-300</span><span>0</span></div>
+    </div>
+
+    <div class="input-group">
+      <label>ML LCL · m AGL</label>
+      <div class="slider-row">
+        <input id="lclRange" type="range" min="0" max="3000" step="25" value="700">
+        <input id="lcl" type="number" min="0" max="3000" step="25" value="700">
+      </div>
+      <div class="range-label"><span>0</span><span>3000</span></div>
+    </div>
+
+    <div class="input-group">
+      <label>Eff SRH · m²/s²</label>
+      <div class="slider-row">
+        <input id="esrhRange" type="range" min="0" max="600" step="5" value="250">
+        <input id="esrh" type="number" min="0" max="600" step="5" value="250">
+      </div>
+      <div class="range-label"><span>0</span><span>600</span></div>
+    </div>
+
+    <div class="input-group">
+      <label>EBWD · m/s</label>
+      <div class="slider-row">
+        <input id="ebwdRange" type="range" min="0" max="50" step=".5" value="25">
+        <input id="ebwd" type="number" min="0" max="50" step=".5" value="25">
+      </div>
+      <div class="range-label"><span>0</span><span>50</span></div>
+    </div>
+
+    <div class="input-group">
+      <label>0–1 km SRH · m²/s²</label>
+      <div class="slider-row">
+        <input id="srhRange" type="range" min="0" max="600" step="5" value="350">
+        <input id="srh" type="number" min="0" max="600" step="5" value="350">
+      </div>
+      <div class="range-label"><span>0</span><span>600</span></div>
+    </div>
+
+    <div class="input-group">
+      <label>0–6 km Shear · kt</label>
+      <div class="slider-row">
+        <input id="shearRange" type="range" min="0" max="100" step="1" value="60">
+        <input id="shear" type="number" min="0" max="100" step="1" value="60">
+      </div>
+      <div class="range-label"><span>0</span><span>100</span></div>
+    </div>
+
+    <div class="input-group">
+      <label>0–1 km Shear · kt</label>
+      <div class="slider-row">
+        <input id="llShearRange" type="range" min="0" max="60" step="1" value="25">
+        <input id="llShear" type="number" min="0" max="60" step="1" value="25">
+      </div>
+      <div class="range-label"><span>0</span><span>60</span></div>
+    </div>
+
+    <div class="input-group">
+      <label>DCAPE · J/kg</label>
+      <div class="slider-row">
+        <input id="dcapeRange" type="range" min="0" max="2000" step="25" value="450">
+        <input id="dcape" type="number" min="0" max="2000" step="25" value="450">
+      </div>
+      <div class="range-label"><span>0</span><span>2000</span></div>
+    </div>
+
+    <div class="input-group">
+      <label>Downdraft Velocity · m/s</label>
+      <div class="slider-row">
+        <input id="downRange" type="range" min="0" max="60" step=".5" value="30">
+        <input id="down" type="number" min="0" max="60" step=".5" value="30">
+      </div>
+      <div class="range-label"><span>0</span><span>60</span></div>
+    </div>
+
+    <div class="input-group">
+      <label>Surface Temperature · °F</label>
+      <div class="slider-row">
+        <input id="tempRange" type="range" min="20" max="110" step="1" value="77">
+        <input id="temp" type="number" min="20" max="110" step="1" value="77">
+      </div>
+      <div class="range-label"><span>20</span><span>110</span></div>
+    </div>
+
+    <div class="input-group">
+      <label>Dewpoint · °F</label>
+      <div class="slider-row">
+        <input id="dewRange" type="range" min="0" max="85" step="1" value="64">
+        <input id="dew" type="number" min="0" max="85" step="1" value="64">
+      </div>
+      <div class="range-label"><span>0</span><span>85</span></div>
+    </div>
+
+    <div class="input-group">
+      <label>500 mb Temperature · °F</label>
+      <div class="slider-row">
+        <input id="t500Range" type="range" min="-30" max="50" step="1" value="10">
+        <input id="t500" type="number" min="-30" max="50" step="1" value="10">
+      </div>
+      <div class="range-label"><span>-30</span><span>50</span></div>
+    </div>
+
+  </div>
+
+  <div class="actions">
+    <button class="primary" onclick="calculate()">⚡ RUN MESOMAX MODEL</button>
+    <button class="secondary" onclick="resetModel()">RESET</button>
+  </div>
+
+  <div class="toggle-row">
+    <label class="toggle">
+      <input id="showSignificant" type="checkbox" checked>
+      Significant threats
+    </label>
+
+    <label class="toggle">
+      <input id="showExperimental" type="checkbox" checked>
+      Experimental hazards
+    </label>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="section-title">
+    <h2>Diurnal Timing & Climatological Rarity</h2>
+    <span class="badge">DYNAMIC</span>
+  </div>
+
+  <div class="grid">
+
+    <div class="input-group">
+      <label>Time of Day · LST</label>
+      <div class="slider-row">
+        <input id="timeRange" type="range" min="0" max="23" step="1" value="16">
+        <input id="time" type="number" min="0" max="23" step="1" value="16">
+      </div>
+      <div class="range-label"><span>00:00</span><span>23:00</span></div>
+    </div>
+
+    <div class="input-group">
+      <label>Average Slight Risk Days / Year</label>
+      <div class="slider-row">
+        <input id="annualRange" type="range" min="0" max="100" step=".1" value="25">
+        <input id="annual" type="number" min="0" max="100" step=".1" value="25">
+      </div>
+      <div class="range-label"><span>0</span><span>100</span></div>
+    </div>
+
+    <div class="input-group">
+      <label>Spatial Area · sq mi</label>
+      <div class="slider-row">
+        <input id="areaRange" type="range" min="1" max="10000" step="1" value="1963">
+        <input id="area" type="number" min="1" max="10000" step="1" value="1963">
+      </div>
+      <div class="range-label"><span>1</span><span>10000</span></div>
+    </div>
+
+    <div class="input-group">
+      <label>Baseline LSR Density · reports/sq mi</label>
+      <div class="slider-row">
+        <input id="rhoRange" type="range" min="0" max=".01" step=".00001" value=".001">
+        <input id="rho" type="number" min="0" max=".01" step=".00001" value=".001">
+      </div>
+      <div class="range-label"><span>0</span><span>.01</span></div>
+    </div>
+
+  </div>
+</section>
+
+<section class="panel">
+  <div class="section-title">
+    <h2>Model Results</h2>
+    <span class="badge">25-MILE PROBABILITY</span>
+  </div>
+
+  <div id="summary" class="summary-grid">
+    <div class="summary">
+      <small>MODEL STATUS</small>
+      <strong>Waiting</strong>
+    </div>
+  </div>
+
+  <br>
+
+  <div id="results" class="results-grid">
+    <div class="summary">
+      <small>STATUS</small>
+      <strong>Enter conditions and run the model.</strong>
+    </div>
+  </div>
+
+  <div id="uncertainty" class="warning"></div>
+</section>
+
+<section class="panel">
+  <div class="section-title">
+    <h2>Conditional Environmental Probability Distribution</h2>
+    <span class="badge">NON-GAUSSIAN</span>
+  </div>
+
+  <div class="chart-wrap">
+    <canvas id="hazardChart"></canvas>
+  </div>
+
+  <div class="chart-note">
+    Discrete CAPE × shear environmental regime bins are used instead of a smooth Gaussian/bell curve. This is a theoretical conditional framework and is calibration-ready for a historical SPC/LSR training dataset.
+  </div>
+</section>
+
+<section id="advancedPanel" class="panel experimental visible">
+  <div class="section-title">
+    <h2>Significant & Experimental Hazards</h2>
+    <span class="badge">RESEARCH</span>
+  </div>
+
+  <div id="advancedResults" class="results-grid">
+    <div class="summary">
+      <small>STATUS</small>
+      <strong>Run the model.</strong>
+    </div>
+  </div>
+</section>
+
+<section class="panel details">
+  <details>
+    <summary>Calculations & Theoretical Sources</summary>
+
+    <div class="sources">
+
+      <div class="source">
+        <b>STP Equation:</b>
+        Thompson et al. (2004/2012), Weather and Forecasting / NOAA-SPC.
+        The SPC documentation distinguishes the effective-layer CIN/ESRH/EBWD STP from the true fixed-layer STP.
+        <br>
+        <a href="https://origin-west-www-spc.woc.noaa.gov/exper/soundings/help/stp.html" target="_blank" rel="noopener">
+          Official NOAA/SPC STP documentation
+        </a>
+      </div>
+
+      <div class="source">
+        <b>Hail Size Dynamics:</b>
+        Cumulative HAILCAST / Brimelow et al. (2002) physics.
+        <br>
+        <a href="https://journals.ametsoc.org/view/journals/wefo/17/5/1520-0434_2002_017_1048_mmhsia_2_0_co_2.xml" target="_blank" rel="noopener">
+          Brimelow et al. (2002), Weather and Forecasting
+        </a>
+      </div>
+
+      <div class="source">
+        <b>Probabilistic Framework:</b>
+        Brooks, Doswell, & Kay (2003) local spatial probability and climatological report-density modeling.
+        <br>
+        <a href="https://journals.ametsoc.org/view/journals/wefo/18/4/1520-0434_2003_018_0626_ceoldt_2_0_co_2.xml" target="_blank" rel="noopener">
+          Brooks, Doswell, & Kay (2003), Weather and Forecasting
+        </a>
+      </div>
+
+      <div class="source">
+        <b>Spatial Geometry:</b>
+        Probabilities are interpreted as occurrence likelihood within 25 miles of a point, consistent with the SPC/NOAA severe-weather probability convention.
+        <br>
+        <a href="https://www.climate.gov/maps-data/data-snapshots/data-source/historic-probability-severe-weather" target="_blank" rel="noopener">
+          NOAA severe-weather probability methodology
+        </a>
+      </div>
+
+    </div>
+
+    <div class="warning">
+      MesoMax RiskSim is an experimental environment model. The conditional probability functions in this single-file build are not operational SPC probabilities and are not calibrated to an official SPC verification dataset. To create genuinely fitted distributions, train the conditional surfaces against historical sounding/mesoanalysis and LSR data.
+    </div>
+  </details>
+</section>
+
+<div class="footer">
+  MesoMax RiskSim · Experimental severe-weather environment engine
+</div>
+
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+let latest = null;
+
+const inputs = [
+  ["capeRange","cape"],
+  ["sbCapeRange","sbCape"],
+  ["sbLclRange","sbLcl"],
+  ["cape3Range","cape3"],
+  ["cinRange","cin"],
+  ["lclRange","lcl"],
+  ["esrhRange","esrh"],
+  ["ebwdRange","ebwd"],
+  ["srhRange","srh"],
+  ["shearRange","shear"],
+  ["llShearRange","llShear"],
+  ["dcapeRange","dcape"],
+  ["downRange","down"],
+  ["tempRange","temp"],
+  ["dewRange","dew"],
+  ["t500Range","t500"],
+  ["timeRange","time"],
+  ["annualRange","annual"],
+  ["areaRange","area"],
+  ["rhoRange","rho"]
+];
+
+inputs.forEach(([rangeId,inputId]) => {
+  const range = $(rangeId);
+  const input = $(inputId);
+
+  range.addEventListener("input", () => {
+    input.value = range.value;
+    if(latest) calculate();
+  });
+
+  input.addEventListener("input", () => {
+    range.value = input.value;
+    if(latest) calculate();
+  });
+});
+
+$("showSignificant").addEventListener("change", calculate);
+$("showExperimental").addEventListener("change", calculate);
+
+function num(id){
+  const value = Number($(id).value);
+  return Number.isFinite(value) ? value : 0;
+}
+
+function clamp(x,a,b){
+  return Math.max(a,Math.min(b,x));
+}
+
+function norm(x,a,b){
+  return clamp((x-a)/(b-a),0,1);
+}
+
+function logistic(x){
+  return 1/(1+Math.exp(-x));
+}
+
+function sigmoidPercent(x){
+  return 100 * logistic(x);
+}
+
+function risk(p){
+  if(p < 5) return "MRGL";
+  if(p < 15) return "SLGT";
+  if(p < 30) return "ENH";
+  if(p < 45) return "MDT";
+  return "HIGH";
+}
+
+function categorical(p){
+  if(p < 5) return "MRGL";
+  if(p < 15) return "SLGT";
+  if(p < 30) return "ENH";
+  if(p < 45) return "MDT";
+  return "HIGH";
+}
+
+function fixedSTP(sbCape,sbLcl,srh,shearKt){
+  const shearMs = shearKt * .514444;
+
+  const lclFactor =
+    sbLcl < 1000 ? 1 :
+    sbLcl > 2000 ? 0 :
+    (2000 - sbLcl)/1000;
+
+  const shearFactor =
+    shearMs < 12.5 ? 0 :
+    Math.min(shearMs/20,1.5);
+
+  return Math.max(
+    0,
+    (sbCape/1500) *
+    lclFactor *
+    (srh/150) *
+    shearFactor
+  );
+}
+
+function requestedCINSTP(mlCape,lcl,esrh,ebwd,cin){
+  const lclFactor =
+    lcl < 1000 ? 1 :
+    lcl > 2000 ? 0 :
+    (2000-lcl)/1000;
+
+  const ebwdFactor =
+    ebwd < 12.5 ? 0 :
+    ebwd/20;
+
+  const cinFactor =
+    cin < -200 ? 0 :
+    (200 + cin)/150;
+
+  return Math.max(
+    0,
+    (mlCape/1500) *
+    lclFactor *
+    (esrh/150) *
+    ebwdFactor *
+    cinFactor
+  );
+}
+
+function diurnalAdjustment(hour){
+  const solar =
+    clamp(
+      Math.sin(((hour-6)/14)*Math.PI),
+      0,
+      1
+    );
+
+  return {
+    solar,
+    capeFactor:.72 + .45*solar,
+    cinFactor:1.35 - .55*solar,
+    lclFactor:1.12 - .20*solar
+  };
+}
+
+function conditionalProbability(hazard,env){
+  const cape = env.cape;
+  const shear = env.shear;
+  const srh = env.srh;
+  const stp = env.stp;
+  const dcape = env.dcape;
+  const cape3 = env.cape3;
+  const llShear = env.llShear;
+  const dew = env.dew;
+  const lcl = env.lcl;
+
+  let score = 0;
+
+  if(hazard === "tornado"){
+    score =
+      -4.2 +
+      1.25*norm(cape,750,4000) +
+      1.55*norm(srh,75,350) +
+      1.2*norm(shear,35,75) +
+      1.35*norm(stp,0.5,7) +
+      .55*norm(llShear,10,40) -
+      .85*norm(lcl,1000,2000);
+  }
+
+  if(hazard === "hail"){
+    score =
+      -3.7 +
+      1.45*norm(cape,650,3500) +
+      1.05*norm(shear,20,75) +
+      .95*norm(cape3,75,500) +
+      .45*norm(dew,55,75) +
+      .45*norm(lcl,500,1800);
+  }
+
+  if(hazard === "wind"){
+    score =
+      -3.3 +
+      1.15*norm(dcape,300,1300) +
+      1.2*norm(shear,35,90) +
+      .75*norm(cape,550,3000) +
+      .55*norm(cape3,50,500);
+  }
+
+  return clamp(sigmoidPercent(score),0,99.9);
+}
+
+function conditionalSignificant(base,kind,env){
+  let fraction = 0;
+
+  if(kind === "tornado"){
+    fraction =
+      .08 +
+      .72*norm(env.stp,1.5,5) +
+      .18*norm(env.srh,120,500);
+  }
+
+  if(kind === "hail"){
+    fraction =
+      .08 +
+      .72*norm(env.cape,1800,4500) +
+      .20*norm(env.shear,45,80);
+  }
+
+  if(kind === "wind"){
+    fraction =
+      .08 +
+      .65*norm(env.dcape,700,1500) +
+      .25*norm(env.shear,40,90);
+  }
+
+  return clamp(base * clamp(fraction,0,1),0,99.9);
+}
+
+function stormMode(env){
+  const cp = env.coldPool;
+  const llShear = env.llShear * .514444;
+  const ratio = cp / Math.max(llShear,.1);
+
+  const derecho =
+    env.derechoPotential;
+
+  if(derecho){
+    if(env.dew <= 60 && env.dcape > 1000)
+      return "DERECHO · LOW-DEWPOINT";
+
+    if(env.progressive && env.serial)
+      return "DERECHO · HYBRID";
+
+    if(env.progressive)
+      return "DERECHO · PROGRESSIVE";
+
+    return "DERECHO · SERIAL";
+  }
+
+  if(env.supercell > 60){
+    if(env.dew >= 72 && env.cape >= 2500)
+      return "DISCRETE SUPERCELL · HIGH-PRECIPITATION";
+
+    if(env.dew <= 58 || env.cape < 1000)
+      return "DISCRETE SUPERCELL · LOW-PRECIPITATION";
+
+    return "DISCRETE SUPERCELL · CLASSIC";
+  }
+
+  const qlcs = norm(env.shear,40,80) * norm(cp,15,35);
+
+  if(qlcs > .52){
+    return cp > llShear
+      ? "QLCS · BOW ECHO"
+      : "QLCS · HEAVY SQUALL LINE";
+  }
+
+  if(env.microburst > 60)
+    return "MULTICELL / PULSE · PULSE MICROBURST";
+
+  if(env.lightning > 65)
+    return "MULTICELL · LIGHTNING-DOMINANT MCS";
+
+  return "MULTICELL / PULSE";
+}
+
+function calculate(){
+
+  const raw = {
+    cape:num("cape"),
+    sbCape:num("sbCape"),
+    sbLcl:num("sbLcl"),
+    cape3:num("cape3"),
+    cin:num("cin"),
+    lcl:num("lcl"),
+    esrh:num("esrh"),
+    ebwd:num("ebwd"),
+    srh:num("srh"),
+    shear:num("shear"),
+    llShear:num("llShear"),
+    dcape:num("dcape"),
+    down:num("down"),
+    temp:num("temp"),
+    dew:num("dew"),
+    t500:num("t500"),
+    time:num("time"),
+    annual:num("annual"),
+    area:num("area"),
+    rho:num("rho")
+  };
+
+  const diurnal = diurnalAdjustment(raw.time);
+
+  const env = {
+    ...raw,
+    cape:raw.cape * diurnal.capeFactor,
+    sbCape:raw.sbCape * diurnal.capeFactor,
+    sbLcl:raw.sbLcl * diurnal.lclFactor,
+    cin:raw.cin * diurnal.cinFactor,
+    lcl:raw.lcl * diurnal.lclFactor,
+    capeFactor:diurnal.capeFactor
+  };
+
+  const stpCin = requestedCINSTP(
+    env.cape,
+    env.lcl,
+    env.esrh,
+    env.ebwd,
+    env.cin
+  );
+
+  const stpFixed = fixedSTP(
+    env.sbCape,
+    env.sbLcl,
+    env.srh,
+    env.shear
+  );
+
+  env.stp = stpCin;
+  env.stpFixed = stpFixed;
+
+  const coldPool = Math.sqrt(
+    2 * Math.max(env.cape3,0)
+  );
+
+  const llShearMs = env.llShear * .514444;
+
+  const propagationRatio =
+    coldPool / Math.max(llShearMs,.1);
+
+  const potentialTrack =
+    propagationRatio >= .80
+      ? clamp(
+          250 * propagationRatio * norm(env.cape3,100,500),
+          0,
+          1500
+        )
+      : 0;
+
+  const progressive =
+    potentialTrack >= 250 &&
+    coldPool >= 25 &&
+    propagationRatio > 1.15;
+
+  const serial =
+    potentialTrack >= 250 &&
+    env.shear >= 50 &&
+    propagationRatio <= 1.15;
+
+  const derechoPotential =
+    potentialTrack >= 250 &&
+    coldPool >= 20 &&
+    env.shear >= 45;
+
+  const microburst = clamp(
+    100 * (
+      .55*norm(env.dcape,500,1600) +
+      .45*norm(env.down,20,50)
+    ),
+    0,
+    100
+  );
+
+  const lightning = clamp(
+    100 * (
+      .55*norm(env.cape,750,3500) +
+      .45*norm(env.cape3,75,500)
+    ),
+    0,
+    100
+  );
+
+  const outflowGust =
+    Math.round(
+      clamp(
+        (
+          .55*Math.sqrt(2*Math.max(env.dcape,0)) +
+          .45*env.down
+        ) * 1.94384,
+        0,
+        130
+      )
+    );
+
+  const coldPoolScore =
+    3 * coldPool;
+
+  const hail = conditionalProbability("hail",{
+    ...env,
+    stp:stpCin
+  });
+
+  const tornado = conditionalProbability("tornado",{
+    ...env,
+    stp:stpCin
+  });
+
+  const wind = conditionalProbability("wind",{
+    ...env,
+    stp:stpCin
+  });
+
+  const supercell = clamp(
+    100 * (
+      .4*norm(env.cape,1200,3000) +
+      .35*norm(env.shear,30,75) +
+      .25*norm(env.esrh,100,500)
+    ),
+    0,
+    100
+  );
+
+  const significant = {
+    tornado:conditionalSignificant(tornado,"tornado",{
+      ...env,
+      stp:stpCin
+    }),
+    hail:conditionalSignificant(hail,"hail",{
+      ...env,
+      stp:stpCin
+    }),
+    wind:conditionalSignificant(wind,"wind",{
+      ...env,
+      stp:stpCin
+    })
+  };
+
+  const highestBaseline = Math.max(
+    tornado,
+    hail,
+    wind
+  );
+
+  const category = categorical(highestBaseline);
+
+  const forecastProbability =
+    highestBaseline / 100;
+
+  const expectedEventsPerYear =
+      (0.001) * (100 - env.annual) * Math.pow(82180, forecastProbability);
+
+  const returnPeriod =
+    expectedEventsPerYear > 0
+      ? 1/expectedEventsPerYear
+      : Infinity;
+
+  let rarity;
+
+  if(expectedEventsPerYear >= 1)
+    rarity = "Rare Generational Event";
+  else if(returnPeriod <= 3)
+    rarity = "Decade Storm";
+  else if(returnPeriod <= 10)
+    rarity = "Semi Annual Event";
+  else
+    rarity = "Rare";
+
+  const estimatedLSR =
+    env.area *
+    (highestBaseline/100) *
+    env.rho;
+
+  const hailSize =
+    clamp(
+      .75 +
+      1.4*norm(env.cape,1000,4000) +
+      .8*norm(env.shear,35,80) +
+      .6*norm(env.cape3,100,500),
+      .75,
+      5.5
+    );
+
+  const windGust =
+    Math.round(
+      35 +
+      75*norm(env.dcape,300,1600)*
+      norm(env.shear,35,90)
+    );
+
+  env.coldPool = coldPool;
+  env.propagationRatio = propagationRatio;
+  env.potentialTrack = potentialTrack;
+  env.progressive = progressive;
+  env.serial = serial;
+  env.derechoPotential = derechoPotential;
+  env.microburst = microburst;
+  env.lightning = lightning;
+
+  const mode = stormMode(env);
+
+  latest = {
+    env,
+    stpCin,
+    stpFixed,
+    tornado,
+    hail,
+    wind,
+    supercell,
+    significant,
+    highestBaseline,
+    category,
+    rarity,
+    returnPeriod,
+    expectedEventsPerYear,
+    estimatedLSR,
+    hailSize,
+    windGust,
+    coldPool,
+    coldPoolScore,
+    potentialTrack,
+    propagationRatio,
+    progressive,
+    serial,
+    derechoPotential,
+    microburst,
+    lightning,
+    outflowGust,
+    mode
+  };
+
+  render(latest);
+  drawDistribution(latest);
+}
+
+function render(data){
+
+  const d = data;
+
+  $("summary").innerHTML = `
+    <div class="summary">
+      <small>SPC CATEGORICAL LEVEL</small>
+      <strong>${d.category}</strong>
+    </div>
+
+    <div class="summary">
+      <small>HIGHEST BASELINE PROBABILITY</small>
+      <strong>${d.highestBaseline.toFixed(1)}%</strong>
+    </div>
+
+    <div class="summary">
+      <small>STORM MODE</small>
+      <strong>${d.mode}</strong>
+    </div>
+
+    <div class="summary">
+      <small>FREQUENCY PER YEAR</small>
+      <strong>${Number.isFinite(d.returnPeriod)
+        ? d.returnPeriod.toFixed(1)+" yr"
+        : "N/A"}</strong>
+    </div>
+  `;
+
+  const hazards = [
+    ["Tornado",d.tornado],
+    ["Large Hail",d.hail],
+    ["Damaging Wind",d.wind],
+    ["Severe (Day 3+)",d.supercell]
+  ];
+
+  $("results").innerHTML = hazards.map(([name,p]) => {
+
+    const level = risk(p);
+    const hatched =
+      p >= 10 ? "hatched" : "";
+
+    return `
+      <div class="risk-card ${hatched}">
+        <h3>${name}</h3>
+
+        <div class="value">
+          <strong>${p.toFixed(1)}</strong>
+          <span>% within 25 mi</span>
+        </div>
+
+        <div class="bar">
+          <div class="fill ${level}" style="width:${p}%"></div>
+        </div>
+
+        <span class="level ${level}">
+          ${level}
+        </span>
+      </div>
+    `;
+  }).join("") + `
+
+    <div class="risk-card">
+      <h3>STP · CIN / ESRH / EBWD</h3>
+      <div class="value">
+        <strong>${d.stpCin.toFixed(2)}</strong>
+      </div>
+      <span class="level ${d.stpCin >= 1 ? "MDT" : "SLGT"}">
+        REQUESTED EQUATION
+      </span>
+    </div>
+
+    <div class="risk-card">
+      <h3>STP · TRUE FIXED LAYER</h3>
+      <div class="value">
+        <strong>${d.stpFixed.toFixed(2)}</strong>
+      </div>
+      <span class="level ${d.stpFixed >= 1 ? "MDT" : "SLGT"}">
+        SPC FIXED-LAYER FORM
+      </span>
+    </div>
+
+    <div class="risk-card">
+      <h3>Estimated LSRs</h3>
+      <div class="value">
+        <strong>${d.estimatedLSR.toFixed(3)}</strong>
+      </div>
+      <span class="level MRGL">
+        AREA × PROB × ρ
+      </span>
+    </div>
+
+    <div class="risk-card">
+      <h3>Event Rarity</h3>
+      <div class="value">
+        <strong style="font-size:24px">${d.rarity}</strong>
+      </div>
+      <span class="level ${d.returnPeriod > 10 ? "HIGH" : "ENH"}">
+        ${d.expectedEventsPerYear.toFixed(3)} year return period
+      </span>
+    </div>
+  `;
+
+  $("uncertainty").innerHTML =
+    `Diurnal adjustment: <b>${(d.env.cape/d.env.capeFactor).toFixed(0)} → ${d.env.cape.toFixed(0)} J/kg CAPE</b> effective at ${String(d.env.time).padStart(2,"0")}:00 LST. ` +
+    `Probabilities are point-centered 25-mile occurrence estimates, not raw storm intensity scores.`;
+
+  const sig = d.significant;
+
+  $("advancedResults").innerHTML = `
+
+    <div class="risk-card">
+      <h3>Significant Tornado · EF2+</h3>
+      <div class="value">
+        <strong>${sig.tornado.toFixed(1)}%</strong>
+        <span>25 mi</span>
+      </div>
+      <span class="level ${sig.tornado >= 10 ? "HIGH" : "ENH"}">
+        CONDITIONAL INTENSITY
+      </span>
+    </div>
+
+    <div class="risk-card">
+      <h3>Significant Hail · 2"+</h3>
+      <div class="value">
+        <strong>${sig.hail.toFixed(1)}%</strong>
+        <span>25 mi</span>
+      </div>
+      <span class="level ${sig.hail >= 10 ? "HIGH" : "ENH"}">
+        CONDITIONAL INTENSITY
+      </span>
+    </div>
+
+    <div class="risk-card">
+      <h3>Significant Wind · 65 kt+</h3>
+      <div class="value">
+        <strong>${sig.wind.toFixed(1)}%</strong>
+        <span>25 mi</span>
+      </div>
+      <span class="level ${sig.wind >= 10 ? "HIGH" : "ENH"}">
+        CONDITIONAL INTENSITY
+      </span>
+    </div>
+
+    <div class="risk-card">
+      <h3>Microburst Potential Index</h3>
+      <div class="value">
+        <strong>${d.microburst.toFixed(1)}</strong>
+        <span>/100</span>
+      </div>
+      <span class="level ${risk(d.microburst)}">
+        ${risk(d.microburst)}
+      </span>
+    </div>
+
+    <div class="risk-card">
+      <h3>Derecho Potential Track</h3>
+      <div class="value">
+        <strong>${d.potentialTrack.toFixed(0)}</strong>
+        <span>mi</span>
+      </div>
+      <span class="level ${d.derechoPotential ? "HIGH" : "MRGL"}">
+        ${d.derechoPotential ? "DERECHO POSSIBLE" : "NO 250-MI TRACK"}
+      </span>
+    </div>
+
+    <div class="risk-card">
+      <h3>Cold Pool Propagation</h3>
+      <div class="value">
+        <strong>${d.coldPool.toFixed(1)}</strong>
+        <span>m/s</span>
+      </div>
+      <span class="level ENH">
+        C / SHEAR ${d.propagationRatio.toFixed(2)}
+      </span>
+    </div>
+
+    <div class="risk-card">
+      <h3>Cold Pool Intensity · h·b</h3>
+      <div class="value">
+        <strong>${d.coldPoolScore.toFixed(1)}</strong>
+        <span>km·m/s</span>
+      </div>
+      <span class="level ENH">
+        3 km × C
+      </span>
+    </div>
+
+    <div class="risk-card">
+      <h3>CG Lightning Flash Rate</h3>
+      <div class="value">
+        <strong>${Math.round(5 + d.lightning*1.8)}</strong>
+        <span>flashes/hr</span>
+      </div>
+      <span class="level ${risk(d.lightning)}">
+        ${risk(d.lightning)}
+      </span>
+    </div>
+
+    <div class="risk-card">
+      <h3>Outflow Boundary Gust</h3>
+      <div class="value">
+        <strong>${d.outflowGust}</strong>
+        <span>mph</span>
+      </div>
+      <span class="level ${risk(d.outflowGust)}">
+        GUST POTENTIAL
+      </span>
+    </div>
+
+    <div class="risk-card">
+      <h3>Maximum Hail Estimate</h3>
+      <div class="value">
+        <strong>${d.hailSize.toFixed(1)}"</strong>
+      </div>
+      <span class="level ${d.hailSize >= 2 ? "HIGH" : "ENH"}">
+        HAILCAST-STYLE PROXY
+      </span>
+    </div>
+
+    <div class="risk-card">
+      <h3>Wind Gust Estimate</h3>
+      <div class="value">
+        <strong>${d.windGust}</strong>
+        <span>mph</span>
+      </div>
+      <span class="level ${risk(d.windGust)}">
+        SURFACE WIND
+      </span>
+    </div>
+
+    <div class="risk-card">
+      <h3>Derecho Subtype Flags</h3>
+      <div class="metric-list">
+        <div class="metric">
+          <span>Progressive</span>
+          <strong>${d.progressive ? "YES" : "NO"}</strong>
+        </div>
+        <div class="metric">
+          <span>Serial</span>
+          <strong>${d.serial ? "YES" : "NO"}</strong>
+        </div>
+        <div class="metric">
+          <span>Low-Dewpoint</span>
+          <strong>${d.env.dew <= 60 ? "YES" : "NO"}</strong>
+        </div>
+        <div class="metric">
+          <span>Hybrid</span>
+          <strong>${d.progressive && d.serial ? "YES" : "NO"}</strong>
+        </div>
+      </div>
+    </div>
+  `;
+
+  $("advancedPanel").classList.toggle(
+    "visible",
+    $("showSignificant").checked ||
+    $("showExperimental").checked
+  );
+
+  document.querySelectorAll(".risk-card").forEach(card => {
+    const title = card.querySelector("h3")?.textContent || "";
+
+    const significant =
+      title.includes("Significant");
+
+    const experimental =
+      title.includes("Microburst") ||
+      title.includes("Derecho") ||
+      title.includes("Cold Pool") ||
+      title.includes("Lightning") ||
+      title.includes("Outflow") ||
+      title.includes("Hail Estimate") ||
+      title.includes("Wind Gust Estimate");
+
+    if(significant)
+      card.style.display =
+        $("showSignificant").checked ? "" : "none";
+
+    if(experimental)
+      card.style.display =
+        $("showExperimental").checked ? "" : "none";
+  });
+}
+
+function drawDistribution(data){
+
+  const canvas = $("hazardChart");
+  const ctx = canvas.getContext("2d");
+
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+
+  canvas.width = rect.width*dpr;
+  canvas.height = rect.height*dpr;
+
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+
+  const width = rect.width;
+  const height = rect.height;
+
+  ctx.clearRect(0,0,width,height);
+
+  const pad = {
+    left:42,
+    right:20,
+    top:20,
+    bottom:40
+  };
+
+  const chartW = width-pad.left-pad.right;
+  const chartH = height-pad.top-pad.bottom;
+
+  ctx.font = "12px Segoe UI";
+  ctx.fillStyle = "#71809a";
+
+  for(let i=0;i<=5;i++){
+
+    const y =
+      pad.top +
+      chartH -
+      chartH*(i/5);
+
+    ctx.beginPath();
+    ctx.strokeStyle = "rgba(255,255,255,.09)";
+    ctx.lineWidth = 1;
+    ctx.moveTo(pad.left,y);
+    ctx.lineTo(width-pad.right,y);
+    ctx.stroke();
+
+    ctx.fillText(`${i*20}`,8,y+4);
+  }
+
+  const bins = [
+    [0,500],
+    [500,1000],
+    [1000,1500],
+    [1500,2000],
+    [2000,2500],
+    [2500,3000],
+    [3000,3500],
+    [3500,4000],
+    [4000,5000],
+    [5000,6000]
+  ];
+
+  const series = [
+    {
+      name:"Hail",
+      color:"#ffcf33",
+      hazard:"hail"
+    },
+    {
+      name:"Wind",
+      color:"#ff5c5c",
+      hazard:"wind"
+    },
+    {
+      name:"Tornado",
+      color:"#d85cff",
+      hazard:"tornado"
+    }
+  ];
+
+  const values = {};
+
+  series.forEach(s => {
+
+    values[s.name] = bins.map(([lo,hi]) => {
+
+      const cape = (lo+hi)/2;
+
+      const env = {
+        ...data.env,
+        cape
+      };
+
+      return conditionalProbability(
+        s.hazard,
+        env
+      );
+    });
+  });
+
+  const barWidth = chartW/bins.length;
+
+  series.forEach((s,seriesIndex) => {
+
+    values[s.name].forEach((value,i) => {
+
+      const groupX =
+        pad.left +
+        i*barWidth;
+
+      const w =
+        barWidth*.24;
+
+      const x =
+        groupX +
+        barWidth*.08 +
+        seriesIndex*w;
+
+      const h =
+        chartH*(value/100);
+
+      const y =
+        pad.top+chartH-h;
+
+      ctx.fillStyle = s.color;
+      ctx.globalAlpha = .78;
+      ctx.fillRect(x,y,w,h);
+      ctx.globalAlpha = 1;
+
+      ctx.strokeStyle = s.color;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x,y,w,h);
+    });
+  });
+
+  ctx.fillStyle = "#71809a";
+
+  bins.forEach(([lo,hi],i) => {
+
+    const x =
+      pad.left +
+      i*barWidth +
+      barWidth/2 -
+      17;
+
+    ctx.fillText(
+      `${lo/1000}k`,
+      x,
+      height-12
+    );
+  });
+
+  ctx.fillStyle = "#9aa6bd";
+  ctx.fillText(
+    "ML CAPE environmental regime bin · J/kg",
+    pad.left+8,
+    height-1
+  );
+
+  ctx.fillText(
+    "Conditional probability %",
+    8,
+    15
+  );
+}
+
+function resetModel(){
+
+  const defaults = {
+    cape:500,
+    sbCape:1000,
+    sbLcl:700,
+    cape3:100,
+    cin:-8,
+    lcl:700,
+    esrh:250,
+    ebwd:25,
+    srh:350,
+    shear:60,
+    llShear:25,
+    dcape:450,
+    down:30,
+    temp:77,
+    dew:64,
+    t500:10,
+    time:16,
+    annual:25,
+    area:500,
+    rho:.001
+  };
+
+  Object.entries(defaults).forEach(([id,value]) => {
+    $(id).value = value;
+    const range = $(id+"Range");
+    if(range) range.value = value;
+  });
+
+  latest = null;
+
+  $("summary").innerHTML = `
+    <div class="summary">
+      <small>MODEL STATUS</small>
+      <strong>Waiting</strong>
+    </div>
+  `;
+
+  $("results").innerHTML = `
+    <div class="summary">
+      <small>STATUS</small>
+      <strong>Enter conditions and run the model.</strong>
+    </div>
+  `;
+
+  $("advancedResults").innerHTML = `
+    <div class="summary">
+      <small>STATUS</small>
+      <strong>Run the model.</strong>
+    </div>
+  `;
+
+  $("uncertainty").innerHTML = "";
+
+  const canvas = $("hazardChart");
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+}
+
+window.addEventListener("resize",() => {
+  if(latest) drawDistribution(latest);
+});
+
+calculate();
+</script>
+</body>
+          </html>
