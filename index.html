@@ -973,7 +973,8 @@ function diurnalAdjustment(hour){
   };
 }
 
-function conditionalProbability(hazard,env){
+
+function conditionalProbability(hazard, env) {
   const cape = env.cape;
   const shear = env.shear;
   const srh = env.srh;
@@ -984,71 +985,88 @@ function conditionalProbability(hazard,env){
   const dew = env.dew;
   const lcl = env.lcl;
 
-  let score = 0;
+  let score = 0.0;
 
-    if (hazard === "tornado") {
-  // 1. Missing-Data Protection
+  // Helper function to normalize values between 0.0 and 1.0 to prevent bounds errors
+  const norm = (val, min, max) => Math.max(0, Math.min(1, (val - min) / (max - min)));
+
+  // 1. Global Missing-Data Protection
   const requiredMetrics = [cape, shear, srh, stp, dcape, cape3, llShear, dew, lcl];
   if (requiredMetrics.some(v => v === undefined || v === null || isNaN(v))) {
-    score = 0.0;
-  } else if (cape <= 0 || shear <= 0 || srh <= 0) {
-    // 2. Physical Zero-Floors (Core energy or shear missing means zero risk)
-    score = 0.0;
-  } else {
-    // 3. Cap Parameter Bounds (Prevents out-of-bounds extrapolation errors)
-    const cappedCape = Math.min(cape, 4500);
-    const cappedSRH = Math.min(srh, 400);
-    const cappedShear = Math.min(shear, 80);
-    const cappedSTP = Math.min(stp, 8.0);
+    return 0.0;
+  }
+
+  if (hazard === "tornado") {
+    if (cape <= 0 || shear <= 0 || srh <= 0) {
+      // 2. Physical Zero-Floors
+      score = 0.0;
+    } else {
+      // 3. Cap Parameter Bounds
+      const cappedCape = Math.min(cape, 4500);
+      const cappedSRH = Math.min(srh, 400);
+      const cappedShear = Math.min(shear, 80);
+      const cappedSTP = Math.min(stp, 8.0);
+      
+      // 4. Structural Corrections
+      const lclFactor = Math.max(0, (2000 - lcl) / 1000); 
+      const dcapePenalty = dcape > 1000 ? Math.max(0, 1 - (dcape - 1000) / 1000) : 1.0;
+
+      // 5. Multiplicative Interaction Terms
+      const deepKinematicInteraction = (cappedCape / 1500) * (cappedShear / 20) * (cappedSRH / 150);
+      const lowLevelTriggers = (cape3 / 100) * (llShear / 15);
+
+      // 6. Compute Log-Odds (z) - Adjusted Dew point anchor to typical F scales
+      const z = -4.5 
+                + (1.4 * cappedSTP) 
+                + (1.1 * deepKinematicInteraction) 
+                + (0.8 * lowLevelTriggers) 
+                + (1.0 * lclFactor)
+                + (0.4 * norm(dew, 55, 75));
+
+      // 7. Logistic Sigmoid Function 
+      const baseProbability = 1 / (1 + Math.exp(-z));
+      score = parseFloat((baseProbability * dcapePenalty).toFixed(4));
+    }
+  }
+
+  else if (hazard === "hail") {
+    // Hail requires baseline updraft strength (CAPE)
+    if (cape < 100 || shear < 15) {
+      score = 0.0;
+    } else {
+      // Based on Significant Hail Parameter (SHIP) logic: heavily favors broad CAPE and deep-layer shear
+      const z = -3.7 
+                + 1.65 * norm(cape, 650, 4000) 
+                + 1.25 * norm(shear, 25, 80) 
+                + 0.65 * norm(cape3, 50, 300) 
+                + 0.45 * norm(dew, 55, 75) 
+                - 0.25 * norm(lcl, 1000, 2500); // Very high LCLs can promote melting/evaporation of small hail
+
+      score = parseFloat((1 / (1 + Math.exp(-z))).toFixed(4));
+    }
+  }
+
+  else if (hazard === "wind") {
+    // Severe wind requires either massive CAPE collapsing, or strong shear pulling winds down
+    if ((cape < 100 && shear < 30) || dcape < 100) {
+      score = 0.0;
+    } else {
+      // Based on Derecho/Wind Damage composites: requires DCAPE for downbursts and low-level shear for forward propagation
+      const z = -3.3 
+                + 1.35 * norm(dcape, 400, 1500) 
+                + 1.10 * norm(shear, 35, 90) 
+                + 0.90 * norm(llShear, 20, 50) // llShear added: crucial for cold pool/shear balance in squall lines
+                + 0.75 * norm(cape, 550, 3500) 
+                + 0.45 * norm(cape3, 50, 200);
+
+      score = parseFloat((1 / (1 + Math.exp(-z))).toFixed(4));
+    }
+  }
+
+  return score;
+    }
+  
     
-    // 4. Structural Structural Corrections
-    // LCL tracking: prevents low cloud bases from triggering mathematical subtraction inversions
-    const lclFactor = Math.max(0, (2000 - lcl) / 1000); 
-
-    // DCAPE modifier: aggressive cold pools tear down tornado updrafts
-    const dcapePenalty = dcape > 1000 ? Math.max(0, 1 - (dcape - 1000) / 1000) : 1.0;
-
-    // 5. Multiplicative Interaction Terms (Models overlapping physics instead of basic addition)
-    const deepKinematicInteraction = (cappedCape / 1500) * (cappedShear / 20) * (cappedSRH / 150);
-    const lowLevelTriggers = (cape3 / 100) * (llShear / 15);
-
-    // 6. Compute Log-Odds (z) using a stabilized mathematical anchor
-    const z = -4.5 
-              + (1.4 * cappedSTP) 
-              + (1.1 * deepKinematicInteraction) 
-              + (0.8 * lowLevelTriggers) 
-              + (1.0 * lclFactor)
-              + (0.4 * (dew - 10) / 10);
-
-    // 7. Logistic Sigmoid Function (Converts arbitrary numbers into a strict 0.0 - 1.0 probability)
-    const baseProbability = 1 / (1 + Math.exp(-z));
-
-    // Combine sigmoid probability with the physical structural penalty
-    score = parseFloat((baseProbability * dcapePenalty).toFixed(4));
-  }
-}
-
-  }
-
-  if(hazard === "hail"){
-    score =
-      -3.7 +
-      1.45*norm(cape,650,3500) +
-      1.05*norm(shear,20,75) +
-      .95*norm(cape3,75,500) +
-      .45*norm(dew,55,75) +
-      .45*norm(lcl,500,1800);
-  }
-
-  if(hazard === "wind"){
-    score =
-      -3.3 +
-      1.15*norm(dcape,300,1300) +
-      1.2*norm(shear,35,90) +
-      .75*norm(cape,550,3000) +
-      .55*norm(cape3,50,500);
-  }
-
 
   return clamp(sigmoidPercent(score),0,99.9);
 }
