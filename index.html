@@ -986,15 +986,48 @@ function conditionalProbability(hazard,env){
 
   let score = 0;
 
-    if(hazard === "tornado"){
-    score =
-      -4.2 +
-      1.25*norm(cape,750,4000) +
-      1.55*norm(srh,75,350) +
-      1.2*norm(shear,35,75) +
-      1.35*norm(stp,0.5,7) +
-      .55*norm(llShear,10,40) -
-      .85*norm(lcl,1000,2000);
+    if (hazard === "tornado") {
+  // 1. Missing-Data Protection
+  const requiredMetrics = [cape, shear, srh, stp, dcape, cape3, llShear, dew, lcl];
+  if (requiredMetrics.some(v => v === undefined || v === null || isNaN(v))) {
+    score = 0.0;
+  } else if (cape <= 0 || shear <= 0 || srh <= 0) {
+    // 2. Physical Zero-Floors (Core energy or shear missing means zero risk)
+    score = 0.0;
+  } else {
+    // 3. Cap Parameter Bounds (Prevents out-of-bounds extrapolation errors)
+    const cappedCape = Math.min(cape, 4500);
+    const cappedSRH = Math.min(srh, 400);
+    const cappedShear = Math.min(shear, 80);
+    const cappedSTP = Math.min(stp, 8.0);
+    
+    // 4. Structural Structural Corrections
+    // LCL tracking: prevents low cloud bases from triggering mathematical subtraction inversions
+    const lclFactor = Math.max(0, (2000 - lcl) / 1000); 
+
+    // DCAPE modifier: aggressive cold pools tear down tornado updrafts
+    const dcapePenalty = dcape > 1000 ? Math.max(0, 1 - (dcape - 1000) / 1000) : 1.0;
+
+    // 5. Multiplicative Interaction Terms (Models overlapping physics instead of basic addition)
+    const deepKinematicInteraction = (cappedCape / 1500) * (cappedShear / 20) * (cappedSRH / 150);
+    const lowLevelTriggers = (cape3 / 100) * (llShear / 15);
+
+    // 6. Compute Log-Odds (z) using a stabilized mathematical anchor
+    const z = -4.5 
+              + (1.4 * cappedSTP) 
+              + (1.1 * deepKinematicInteraction) 
+              + (0.8 * lowLevelTriggers) 
+              + (1.0 * lclFactor)
+              + (0.4 * (dew - 10) / 10);
+
+    // 7. Logistic Sigmoid Function (Converts arbitrary numbers into a strict 0.0 - 1.0 probability)
+    const baseProbability = 1 / (1 + Math.exp(-z));
+
+    // Combine sigmoid probability with the physical structural penalty
+    score = parseFloat((baseProbability * dcapePenalty).toFixed(4));
+  }
+}
+
   }
 
   if(hazard === "hail"){
