@@ -1277,34 +1277,34 @@ function calculate(){
   let rarity;
 
   if(expectedEventsPerYear >= 1)
-    rarity = "Rare Generational Event";
+    rarity = "Common";
   else if(returnPeriod <= 3)
-    rarity = "Decade Storm";
-  else if(returnPeriod <= 10)
-    rarity = "Semi Annual Event";
-  else
     rarity = "Rare";
+  else if(returnPeriod <= 10)
+    rarity = "Uncommon";
+  else
+    rarity = "Unprecedented";
 
   const estimatedLSR =
     env.area *
-    (highestBaseline/100) *
+    (highestBaseline/32) *
     env.rho;
 
   const hailSize =
     clamp(
       .75 +
-      1.4*norm(env.cape,1000,4000) +
-      .8*norm(env.shear,35,80) +
-      .6*norm(env.cape3,100,500),
+      1.4*norm(env.cape,975,3200) +
+      .8*norm(env.shear,22,94) +
+      .6*norm(env.cape3,86,450),
       .75,
       5.5
     );
 
   const windGust =
     Math.round(
-      35 +
-      75*norm(env.dcape,300,1600)*
-      norm(env.shear,35,90)
+      24 +
+      75*norm(env.dcape,400,1400)*
+      norm(env.shear,30,75)
     );
 
   env.coldPool = coldPool;
