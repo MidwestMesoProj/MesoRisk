@@ -1056,42 +1056,42 @@ function stormMode(env){
 
   if(derecho){
     if(env.dew <= 60 && env.dcape > 1000)
-      return "DERECHO · LOW-DEWPOINT";
+      return "LOW DEWPOINT DERECHO";
 
     if(env.progressive && env.serial)
-      return "DERECHO · HYBRID";
+      return "HYBRID DERECHO";
 
     if(env.progressive)
-      return "DERECHO · PROGRESSIVE";
+      return "PROGRESSIVE DERECHO";
 
-    return "DERECHO · SERIAL";
+    return "BOWING FRONT / SERIAL DERECHO";
   }
 
-  if(env.supercell > 60){
-    if(env.dew >= 72 && env.cape >= 2500)
-      return "DISCRETE SUPERCELL · HIGH-PRECIPITATION";
+  if(env.supercell > 50){
+    if(env.dew >= 68 && env.cape >= 2200)
+      return "HP SUPERCELL";
 
-    if(env.dew <= 58 || env.cape < 1000)
-      return "DISCRETE SUPERCELL · LOW-PRECIPITATION";
+    if(env.dew <= 54 || env.cape < 1250)
+      return "LP SUPERCELL";
 
-    return "DISCRETE SUPERCELL · CLASSIC";
+    return "DISCRETE SUPERCELL";
   }
 
-  const qlcs = norm(env.shear,40,80) * norm(cp,15,35);
+  const qlcs = norm(env.shear,32,64) * norm(cp,15,35);
 
   if(qlcs > .52){
     return cp > llShear
-      ? "QLCS · BOW ECHO"
-      : "QLCS · HEAVY SQUALL LINE";
+      ? "QLCS · BOWING SQAULL LINE"
+      : "QLCS · FRONTAL SQUALL LINE";
   }
 
-  if(env.microburst > 60)
-    return "MULTICELL / PULSE · PULSE MICROBURST";
+  if(env.microburst > 66)
+    return "PULSE STORM / MICROBURST THREAT";
 
-  if(env.lightning > 65)
-    return "MULTICELL · LIGHTNING-DOMINANT MCS";
+  if(env.lightning > 62)
+    return "SEVERE MCS / LIGHTNING RISK";
 
-  return "MULTICELL / PULSE";
+  return "PULSE STORM / MCS RISK";
 }
 
 function calculate(){
@@ -1161,31 +1161,31 @@ function calculate(){
   const potentialTrack =
     propagationRatio >= .80
       ? clamp(
-          250 * propagationRatio * norm(env.cape3,100,500),
+          250 * propagationRatio * norm(env.cape3,60,320),
           0,
-          1500
+          1200
         )
       : 0;
 
   const progressive =
     potentialTrack >= 250 &&
-    coldPool >= 25 &&
-    propagationRatio > 1.15;
+    coldPool >= 20 &&
+    propagationRatio > 1.10;
 
   const serial =
-    potentialTrack >= 250 &&
-    env.shear >= 50 &&
-    propagationRatio <= 1.15;
+    potentialTrack >= 175 &&
+    env.shear >= 45 &&
+    propagationRatio <= 1.10;
 
   const derechoPotential =
     potentialTrack >= 250 &&
     coldPool >= 20 &&
-    env.shear >= 45;
+    env.shear >= 40;
 
   const microburst = clamp(
     100 * (
-      .55*norm(env.dcape,500,1600) +
-      .45*norm(env.down,20,50)
+      .55*norm(env.dcape,650,1400) +
+      .45*norm(env.down,30,45)
     ),
     0,
     100
@@ -1193,8 +1193,8 @@ function calculate(){
 
   const lightning = clamp(
     100 * (
-      .55*norm(env.cape,750,3500) +
-      .45*norm(env.cape3,75,500)
+      .55*norm(env.cape,650,2800) +
+      .45*norm(env.cape3,72,285)
     ),
     0,
     100
@@ -1207,8 +1207,8 @@ function calculate(){
           .55*Math.sqrt(2*Math.max(env.dcape,0)) +
           .45*env.down
         ) * 1.94384,
-        0,
-        130
+        30,
+        110
       )
     );
 
