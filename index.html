@@ -1257,6 +1257,7 @@ function calculate(){
 
   const highestBaseline = Math.max(
     tornado,
+    supercell, 
     hail,
     wind
   );
@@ -1277,13 +1278,13 @@ function calculate(){
   let rarity;
 
   if(expectedEventsPerYear >= 1)
-    rarity = "Common";
+    rarity = "Very Rare";
   else if(returnPeriod <= 3)
     rarity = "Rare";
   else if(returnPeriod <= 10)
     rarity = "Uncommon";
   else
-    rarity = "Unprecedented";
+    rarity = "Common";
 
   const estimatedLSR =
     env.area *
