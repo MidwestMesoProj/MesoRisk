@@ -1208,7 +1208,7 @@ function calculate(){
           .45*env.down
         ) * 1.94384,
         30,
-        110
+        120
       )
     );
 
@@ -1304,7 +1304,7 @@ function calculate(){
   const windGust =
     Math.round(
       24 +
-      75*norm(env.dcape,400,1400)*
+      100*norm(env.dcape,400,1400)*
       norm(env.shear,30,75)
     );
 
@@ -1392,7 +1392,7 @@ function render(data){
 
     const level = risk(p);
     const hatched =
-      p >= 10 ? "hatched" : "";
+      p >= 15 ? "hatched" : "";
 
     return `
       <div class="risk-card ${hatched}">
@@ -1805,25 +1805,25 @@ function drawDistribution(data){
 function resetModel(){
 
   const defaults = {
-    cape:500,
-    sbCape:1000,
-    sbLcl:700,
-    cape3:100,
-    cin:-8,
-    lcl:700,
-    esrh:250,
-    ebwd:25,
-    srh:350,
-    shear:60,
-    llShear:25,
-    dcape:450,
-    down:30,
-    temp:77,
-    dew:64,
-    t500:10,
-    time:16,
-    annual:25,
-    area:500,
+    cape:0,
+    sbCape:0,
+    sbLcl:0,
+    cape3:0,
+    cin:0,
+    lcl:0,
+    esrh:0,
+    ebwd:0,
+    srh:0,
+    shear:0,
+    llShear:0,
+    dcape:0,
+    down:0,
+    temp:0,
+    dew:0,
+    t500:0,
+    time:0,
+    annual:0,
+    area:0,
     rho:.001
   };
 
