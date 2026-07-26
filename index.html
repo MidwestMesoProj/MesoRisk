@@ -916,8 +916,8 @@ function fixedSTP(sbCape,sbLcl,srh,shearKt){
   const shearMs = shearKt * .514444;
 
   const lclFactor =
-    sbLcl < 1000 ? 1 :
-    sbLcl > 2000 ? 0 :
+    sbLcl < 800 ? 1 :
+    sbLcl > 1600 ? 0 :
     (2000 - sbLcl)/1000;
 
   const shearFactor =
@@ -1032,14 +1032,14 @@ function conditionalSignificant(base,kind,env){
   if(kind === "hail"){
     fraction =
       .08 +
-      .72*norm(env.cape,1600,5200) +
-      .20*norm(env.shear,38,73);
+      .72*norm(env.cape,1450,4230) +
+      .20*norm(env.shear,22,73);
   }
 
   if(kind === "wind"){
     fraction =
       .08 +
-      .65*norm(env.dcape,750,1800) +
+      .65*norm(env.dcape,825,1520) +
       .25*norm(env.shear,38,76);
   }
 
@@ -1091,7 +1091,7 @@ function stormMode(env){
   if(env.lightning > 62)
     return "SEVERE MCS / LIGHTNING RISK";
 
-  return "PULSE STORM / MCS RISK";
+  return "SCATTERED POP-UP STORMS";
 }
 
 function calculate(){
@@ -1161,9 +1161,9 @@ function calculate(){
   const potentialTrack =
     propagationRatio >= .80
       ? clamp(
-          250 * propagationRatio * norm(env.cape3,60,320),
+          250 * propagationRatio * norm(env.cape3,30,350),
           0,
-          1200
+          1400
         )
       : 0;
 
@@ -1184,8 +1184,8 @@ function calculate(){
 
   const microburst = clamp(
     100 * (
-      .55*norm(env.dcape,650,1400) +
-      .45*norm(env.down,30,45)
+      .55*norm(env.dcape,725,1450) +
+      .45*norm(env.down,35,45)
     ),
     0,
     100
@@ -1304,7 +1304,7 @@ function calculate(){
   const windGust =
     Math.round(
       24 +
-      100*norm(env.dcape,400,1400)*
+      100*norm(env.dcape,200,1400)*
       norm(env.shear,30,75)
     );
 
@@ -1385,7 +1385,7 @@ function render(data){
     ["Tornado",d.tornado],
     ["Large Hail",d.hail],
     ["Damaging Wind",d.wind],
-    ["Severe (Day 3+)",d.supercell]
+    ["SEVERE / GENERAL",d.supercell]
   ];
 
   $("results").innerHTML = hazards.map(([name,p]) => {
