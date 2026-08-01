@@ -1225,21 +1225,21 @@ function calculate(){
     stp:stpCin
   });
 
-  const wind = conditionalProbability("wind",{
-    ...env,
-    stp:stpCin
-  });
+const wind = conditionalProbability("wind", {
+  ...env,
+  stp: stpCin
+});
 
-  const supercell = clamp(
-    const scp =
-    (cape / 1000) *
-    (esrh / 50) *
-    Math.min(Math.max(ebwd / 20, 0), 1.5);
+const K = 550000; // Calibration constant
 
-const score = Math.pow((scp * cape) / K, 0.35) * 100;,
-    0,
-    100
-  );
+const scp =
+  (env.cape / 1000) *
+  (env.esrh / 50) *
+  Math.min(Math.max(env.ebwd / 20, 0), 1.5);
+
+const score = Math.pow((scp * env.cape) / K, 0.35) * 100;
+
+const supercell = clamp(score, 0, 100);
 
   const significant = {
     tornado:conditionalSignificant(tornado,"tornado",{
