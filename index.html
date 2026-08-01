@@ -1231,11 +1231,11 @@ function calculate(){
   });
 
   const supercell = clamp(
-    100 * (
-      .4*norm(env.cape,800,2800) +
-      .35*norm(env.shear,28,64) +
-      .25*norm(env.esrh,85,35)
-    ),
+    Math.pow(
+    (cape * cape * esrh * Math.min(Math.max(ebwd,0),30)) /
+    (1000 * 50 * 20),
+    0.4
+),
     0,
     100
   );
