@@ -1280,37 +1280,38 @@ function stormModeProfile(env,base,d){
   const bow=clamp(d.dcp*12 + env.meanWind*.45 + env.dcape*.018,0,100);
   const cluster=clamp(30 + env.cape*.008 + env.shear*.35 - d.scp*3,0,100);
   return {
-    "Discrete Supercell":supercell,
-    "QLCS / Squall Line":qlcs,
-    "Bow Echo / Derecho":bow,
-    "Multicell Cluster":cluster,
-    "Pulse / Microburst":pulse
+    "Supercells":supercell,
+    "QLCS / Frontal Line":qlcs,
+    "Bow Echo / LEWP":bow,
+    "Severe MCS":cluster,
+    "Pulse / Weak MCS":pulse
   };
 }
 
 function windTag(gust){
-  if(gust < 65) return "55-70 MPH";
+  if(gust < 60) return "< 60 MPH";
+  if(gust < 75) return "55-70 MPH";
   if(gust < 85) return "65-80 MPH";
-  if(gust < 105) return "80-100 MPH";
-  return "85-115 MPH";
+  if(gust < 105) return "85-100 MPH";
+  return "95-110 MPH";
 }
 function hailTag(size){
-  if(size < 1.5) return "1.00-1.50 IN";
-  if(size < 2.5) return "1.50-2.50 IN";
-  if(size < 3.5) return "2.50-3.50 IN";
-  return "3.00-4.50 IN";
+  if(size < 1.5) return "0.75-1.50 IN";
+  if(size < 2.5) return "1.25-2.50 IN";
+  if(size < 3.5) return "2.00-3.50 IN";
+  return "3.25-4.50 IN";
 }
 function tornadoTag(stp,sig){
-  if(stp >= 5 && sig >= 15) return "EF3-EF5 POSSIBLE";
-  if(stp >= 2.5 && sig >= 8) return "EF2-EF4 POSSIBLE";
-  if(stp >= 1) return "EF1-EF2 POSSIBLE";
-  return "BRIEF / WEAK TORNADO POSSIBLE";
+  if(stp >= 5 && sig >= 15) return "150-195 MPH";
+  if(stp >= 2.5 && sig >= 8) return "120-160 MPH";
+  if(stp >= 1) return "100-130 MPH";
+  return "< 90 MPH";
 }
 
 function intensityTheory(env,base,d){
   const thermalDownburst=Math.sqrt(2*Math.max(env.dcape,0))*1.94384;
-  const windMost=Math.round(clamp(env.meanWind + thermalDownburst*.45,40,120));
-  const windMax=Math.round(clamp(env.meanWind + thermalDownburst*.72 + Math.max(env.shear-35,0)*.25,45,125));
+  const windMost=Math.round(clamp(env.meanWind + thermalDownburst*.45,35,115));
+  const windMax=Math.round(clamp(env.meanWind + thermalDownburst*.72 + Math.max(env.shear-35,0)*.25,50,130));
   const hailMost=clamp(.75 + .32*d.ship + .00010*env.cape + .035*Math.max(env.lapse-6.5,0),.75,4.5);
   const hailMax=clamp(hailMost + .35 + .18*d.ship,1,5.5);
   return {
@@ -1484,9 +1485,7 @@ const supercell = clamp(score, 0, 100);
 
   const highestBaseline = Math.max(
     tornado,
-    supercell, 
-    hail,
-    wind
+    supercell
   );
 
   const category = categorical(highestBaseline);
