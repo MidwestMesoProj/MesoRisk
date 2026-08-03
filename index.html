@@ -1280,31 +1280,33 @@ function stormModeProfile(env,base,d){
   const bow=clamp(d.dcp*12 + env.meanWind*.45 + env.dcape*.018,0,100);
   const cluster=clamp(30 + env.cape*.008 + env.shear*.35 - d.scp*3,0,100);
   return {
-    "Supercells":supercell,
-    "QLCS / Frontal Line":qlcs,
-    "Bow Echo / LEWP":bow,
-    "Severe MCS":cluster,
-    "Pulse / Weak MCS":pulse
+    "SUPERCELLS":supercell,
+    "QLCS / FRONTAL LINE":qlcs,
+    "BOWING QLCS":bow,
+    "SEVERE MCS":cluster,
+    "PULSE CLUSTERS":pulse
   };
 }
 
 function windTag(gust){
-  if(gust < 60) return "< 60 MPH";
-  if(gust < 75) return "55-70 MPH";
-  if(gust < 85) return "65-80 MPH";
-  if(gust < 105) return "85-100 MPH";
+  if(gust < 60) return "45-60 MPH";
+  if(gust < 70) return "55-70 MPH";
+  if(gust < 80) return "65-80 MPH";
+  if(gust < 95) return "85-100 MPH";
   return "95-110 MPH";
 }
 function hailTag(size){
   if(size < 1.5) return "0.75-1.50 IN";
   if(size < 2.5) return "1.25-2.50 IN";
   if(size < 3.5) return "2.00-3.50 IN";
-  return "3.25-4.50 IN";
+  return "3.25-4.50+ IN";
 }
 function tornadoTag(stp,sig){
-  if(stp >= 5 && sig >= 15) return "150-195 MPH";
-  if(stp >= 2.5 && sig >= 8) return "120-160 MPH";
-  if(stp >= 1) return "100-130 MPH";
+  if(stp >= 8 && sig >= 15) return "155-200+ MPH";
+  if(stp >= 5 && sig >= 10) return "145-180 MPH";
+  if(stp >= 1) return "85-115 MPH";
+  if(stp >= 3 && sig >= 6) return "120-150 MPH";
+  if(stp >= 2 && sig >= 3) return "100-130 MPH";
   return "< 90 MPH";
 }
 
@@ -1485,6 +1487,8 @@ const supercell = clamp(score, 0, 100);
 
   const highestBaseline = Math.max(
     tornado,
+    wind, 
+    hail, 
     supercell
   );
 
