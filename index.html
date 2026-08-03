@@ -1220,9 +1220,9 @@ function conditionalProbability(hazard,env){
 
 function conditionalSignificant(base,kind,env){
   let multiplier = 0.08;
-  if(kind === "tornado") multiplier = 0.08 + 0.10*Math.min(env.stp,6) + 0.00055*Math.min(env.srh,450);
-  if(kind === "hail") multiplier = 0.08 + 0.00011*Math.min(env.cape,5000) + 0.006*Math.max(env.shear-25,0) + 0.04*Math.max(env.lapse-6.5,0);
-  if(kind === "wind") multiplier = 0.08 + 0.00038*Math.min(env.dcape,1800) + 0.004*Math.max(env.meanWind-20,0);
+  if(kind === "tornado") multiplier = 0.08 + 0.10*Math.min(env.stp,4.5) + 0.00055*Math.min(env.srh,375);
+  if(kind === "hail") multiplier = 0.08 + 0.00011*Math.min(env.cape,3600) + 0.006*Math.max(env.shear-25,0) + 0.04*Math.max(env.lapse-6.5,0);
+  if(kind === "wind") multiplier = 0.08 + 0.00038*Math.min(env.dcape,1400) + 0.004*Math.max(env.meanWind-20,0);
   return clamp(base * clamp(multiplier,0,1),0,99.9);
 }
 
@@ -1302,7 +1302,7 @@ function hailTag(size){
   return "3.25-4.50+ IN";
 }
 function tornadoTag(stp,sig){
-  if(stp >= 8 && sig >= 15) return "155-200+ MPH";
+  if(stp >= 7 && sig >= 13) return "155-200+ MPH";
   if(stp >= 5 && sig >= 10) return "145-180 MPH";
   if(stp >= 1) return "85-115 MPH";
   if(stp >= 3 && sig >= 6) return "120-150 MPH";
@@ -1320,7 +1320,7 @@ function intensityTheory(env,base,d){
     tornado:{tag:tornadoTag(base.stpCin,base.significant.tornado),sig:base.significant.tornado,confidence:clamp(20+base.stpCin*11+env.srh*.08,0,100)},
     hail:{tag:hailTag(hailMost),mostLikely:hailMost,maximum:hailMax,p2:clamp(base.significant.hail,0,99.9),confidence:clamp(20+d.ship*12+env.shear*.45,0,100)},
     wind:{tag:windTag(windMost),mostLikely:windMost,maximum:windMax,p65:clamp(base.significant.wind,0,99.9),confidence:clamp(15+d.dcp*10+env.dcape*.025,0,100)},
-    watch:{probability:clamp(Math.max(base.tornado,base.hail,base.wind)*1.15,0,95)}
+    watch:{probability:clamp(Math.max(base.tornado,base.hail,base.wind)*1.25,0,95)}
   };
 }
 
