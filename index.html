@@ -650,12 +650,12 @@ function buildMD(env, sig, d, i, mode) {
 /* --- SPC Exact Category Logic --- */
 function calcSpcProb(raw, type) {
   if(type === 'tornado') {
-    if(raw >= 60) return 60; if(raw >= 45) return 45; if(raw >= 30) return 30;
-    if(raw >= 15) return 15; if(raw >= 10) return 10; if(raw >= 5) return 5;
-    if(raw >= 2) return 2; return 0;
+    if(raw >= 70) return 60; if(raw >= 55) return 45; if(raw >= 37) return 30;
+    if(raw >= 21) return 15; if(raw >= 16) return 10; if(raw >= 8) return 5;
+    if(raw >= 3) return 2; return 0;
   } else { // Hail/Wind
-    if(raw >= 60) return 60; if(raw >= 45) return 45; if(raw >= 30) return 30;
-    if(raw >= 15) return 15; if(raw >= 5) return 5; return 0;
+    if(raw >= 50) return 60; if(raw >= 35) return 45; if(raw >= 18) return 30;
+    if(raw >= 8) return 15; if(raw >= 3) return 5; return 0;
   }
 }
 function calcSpcCat(t, h, w) {
@@ -710,9 +710,9 @@ function calculate() {
   const cat = calcSpcCat(spcT, spcH, spcW);
 
   const getSigLevel = (sigProb) => {
-    if (sigProb >= 25) return "3 (Extreme / Double Hatched)";
-    if (sigProb >= 10) return "2 (Likely / Hatched)";
-    if (sigProb >= 5) return "1 (Possible)";
+    if (sigProb >= 27) return "3 (Extreme / Double Hatched)";
+    if (sigProb >= 14) return "2 (Likely / Hatched)";
+    if (sigProb >= 3) return "1 (Possible)";
     return "0 (None)";
   };
 
