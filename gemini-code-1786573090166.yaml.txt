@@ -1,0 +1,18 @@
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    # 👇 Add this permissions block
+    permissions:
+      id-token: write
+      pages: write
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      # ... your other build steps ...
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v5
