@@ -858,9 +858,9 @@ function buildMD(env, sig, d, i, mode) {
   let kine = `Kinematic fields are highly supportive of organized ${mode}. Deep-layer (0-6 km) shear of ${env.shear.toFixed(0)} kts is sufficient for sustained updraft rotation, while ${env.srh.toFixed(0)} m2/s2 of 0-1 km SRH will enhance the low-level mesocyclone potential.`;
   
   let expectation = "";
-  if (sig.tornado > 5) expectation += `A concentrated threat for tornadoes exists given the low LCLs (${env.lcl.toFixed(0)}m) and heightened STP (${d.stp.toFixed(1)}). `;
-  if (sig.hail > 5) expectation += `Large to very large hail (up to ${i.hail.max.toFixed(1)} inches) is highly probable with initial discrete cellular development (SHIP: ${d.ship.toFixed(1)}). `;
-  if (sig.wind > 5) expectation += `Damaging convective gusts up to ${i.wind.max} MPH are anticipated, particularly if cells evolve into a forward-propagating QLCS driven by ${env.dcape.toFixed(0)} J/kg of DCAPE. `;
+  if (sig.tornado > 8) expectation += `A concentrated threat for tornadoes exists given the low LCLs (${env.lcl.toFixed(0)}m) and heightened STP (${d.stp.toFixed(1)}). `;
+  if (sig.hail > 10) expectation += `Large to very large hail (up to ${i.hail.max.toFixed(1)} inches) is highly probable with initial discrete cellular development (SHIP: ${d.ship.toFixed(1)}). `;
+  if (sig.wind > 7) expectation += `Damaging convective gusts up to ${i.wind.max} MPH are anticipated, particularly if cells evolve into a forward-propagating QLCS driven by ${env.dcape.toFixed(0)} J/kg of DCAPE. `;
 
   return {
     summary: `Convective trends are being closely monitored. Organized severe weather, primarily ${mode.toLowerCase()}, is expected to increase.`,
@@ -920,9 +920,9 @@ function calculate() {
   const pHail = clamp(raw_pHail, 0, 85);
   const pWind = clamp(raw_pWind, 0, 95);
 
-  const sigTor = clamp((stp / 8) * 100, 0, 90);
-  const sigHail = clamp((ship / 3) * 100, 0, 90);
-  const sigWind = clamp((dcp / 2) * 100, 0, 90);
+  const sigTor = clamp((stp / 6.5) * 85, 0, 90);
+  const sigHail = clamp((ship / 3) * 25, 0, 75);
+  const sigWind = clamp((dcp / 1.6) * 100, 0, 90);
 
   const gustMax = Math.round(clamp(env.meanWind + Math.sqrt(2*Math.max(env.dcape,0))*1.1, 35, 120));
   const hailMax = clamp(0.75 + (0.8 * ship) + (0.00015 * env.cape), 0.5, 4.5);
@@ -931,7 +931,7 @@ function calculate() {
     wind: { max: gustMax, tier: wind8Tier(gustMax) },
     hail: { max: hailMax, tier: hail8Tier(hailMax) },
     tor:  { tier: tornado8Tier(stp, sigTor) },
-    watch: clamp(Math.max(pTor, pHail, pWind)*1.4, 0, 95)
+    watch: clamp(Math.max(pTor, pHail, pWind)*1.65, 0, 95)
   };
 
   const mode = (dcp > 1.2 && env.meanWind > 35 && env.shear > 30) ? "Progressive QLCS / Derecho" : 
