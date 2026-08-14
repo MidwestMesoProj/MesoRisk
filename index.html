@@ -910,18 +910,18 @@ function calculate() {
   const x_tor = -5.5 + (1.2 * stp) + (0.006 * env.srh) - (0.001 * env.lcl) + (0.03 * env.llShear);
   const raw_pTor = (100 / (1 + Math.exp(-x_tor)));
 
-  const x_hail = -4.2 + (1.5 * ship) + (0.0005 * env.cape) + (0.2 * (env.lapse - 6.5));
+  const x_hail = -4.2 + (0.75 * ship) + (0.0004 * env.cape) + (0.2 * (env.lapse - 6.5));
   const raw_pHail = (100 / (1 + Math.exp(-x_hail)));
 
-  const x_wind = -3.8 + (1.8 * dcp) + (0.001 * env.dcape) + (0.04 * env.meanWind);
+  const x_wind = -3.8 + (1.9 * dcp) + (0.0025 * env.dcape) + (0.06 * env.meanWind);
   const raw_pWind = (100 / (1 + Math.exp(-x_wind)));
 
   const pTor = clamp(raw_pTor, 0, 75);
   const pHail = clamp(raw_pHail, 0, 85);
   const pWind = clamp(raw_pWind, 0, 95);
 
-  const sigTor = clamp((stp / 6.5) * 85, 0, 90);
-  const sigHail = clamp((ship / 3) * 25, 0, 75);
+  const sigTor = clamp((stp / 7.5) * 85, 0, 90);
+  const sigHail = clamp((ship / 3) * 25, 0, 90);
   const sigWind = clamp((dcp / 1.6) * 100, 0, 90);
 
   const gustMax = Math.round(clamp(env.meanWind + Math.sqrt(2*Math.max(env.dcape,0))*1.1, 35, 120));
