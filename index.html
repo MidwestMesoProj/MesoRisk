@@ -814,38 +814,47 @@ function num(id){ return $(id) ? (Number($(id).value) || 0) : 0; }
 function clamp(x,a,b){ return Math.max(a,Math.min(b,x)); }
 function risk(p){ if(p<5)return"MRGL"; if(p<15)return"SLGT"; if(p<30)return"ENH"; if(p<45)return"MDT"; return"HIGH"; }
 
-function wind8Tier(gust) {
-  if (gust < 45) return "35 to 50 MPH";
-  if (gust < 55) return "45 to 60 MPH";
-  if (gust < 65) return "55 to 70 MPH";
-  if (gust < 75) return "65 to 80 MPH";
-  if (gust < 85) return "75 to 90 MPH";
-  if (gust < 95) return "85 to 100 MPH";
-  if (gust < 105) return "95 to 110 MPH";
-  return "105+ MPH";
+function wind11Tier(gust) {
+  if (gust < 40) return "< 40 MPH";
+  if (gust < 48) return "40 to 47 MPH";
+  if (gust < 55) return "48 to 54 MPH";
+  if (gust < 63) return "55 to 62 MPH";
+  if (gust < 70) return "63 to 69 MPH";
+  if (gust < 78) return "70 to 77 MPH";
+  if (gust < 85) return "78 to 84 MPH";
+  if (gust < 93) return "85 to 92 MPH";
+  if (gust < 100) return "93 to 99 MPH";
+  if (gust < 108) return "100 to 107 MPH";
+  return "108+ MPH";
 }
 
-function hail8Tier(size) {
-  if (size < 0.75) return "< 0.75 in";
-  if (size < 1.00) return "0.75 to 1.00 in";
-  if (size < 1.25) return "1.00 to 1.25 in";
-  if (size < 1.75) return "1.25 to 1.75 in";
-  if (size < 2.25) return "1.75 to 2.25 in";
-  if (size < 2.75) return "2.25 to 2.75 in";
-  if (size < 3.50) return "2.75 to 3.50 in";
-  return "3.50+ in";
+function hail11Tier(size) {
+  if (size < 0.50) return "< 0.50 in";
+  if (size < 0.75) return "0.50 to 0.74 in";
+  if (size < 1.00) return "0.75 to 0.99 in";
+  if (size < 1.15) return "1.00 to 1.14 in";
+  if (size < 1.40) return "1.15 to 1.39 in";
+  if (size < 1.65) return "1.40 to 1.64 in";
+  if (size < 1.90) return "1.65 to 1.89 in";
+  if (size < 2.15) return "1.90 to 2.14 in";
+  if (size < 2.40) return "2.15 to 2.39 in";
+  if (size < 2.65) return "2.40 to 2.64 in";
+  return "2.65+ in";
 }
 
-function tornado8Tier(stp, sig) {
+function tornado11Tier(stp, sig) {
   let score = stp + (sig/10);
-  if (score < 0.5) return "< 85 MPH";
-  if (score < 1.2) return "85 to 110 MPH";
-  if (score < 2.2) return "111 to 135 MPH";
-  if (score < 3.5) return "136 to 165 MPH";
-  if (score < 5.0) return "166 to 200 MPH";
-  if (score < 7.0) return "201 to 230 MPH";
-  if (score < 9.0) return "231 to 260 MPH";
-  return "260+ MPH";
+  if (score < 0.2) return "< 65 MPH (EF0-)";
+  if (score < 0.8) return "65 to 85 MPH (EF0)";
+  if (score < 1.5) return "86 to 97 MPH";
+  if (score < 2.5) return "98 to 110 MPH (EF1)";
+  if (score < 3.5) return "111 to 122 MPH";
+  if (score < 5.0) return "123 to 135 MPH (EF2)";
+  if (score < 6.5) return "136 to 150 MPH";
+  if (score < 8.0) return "151 to 165 MPH (EF3)";
+  if (score < 10.0) return "166 to 182 MPH";
+  if (score < 12.0) return "183 to 200 MPH (EF4)";
+  return "201+ MPH (EF5)";
 }
 
 function buildMD(env, sig, d, i, mode) {
